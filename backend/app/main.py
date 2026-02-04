@@ -31,6 +31,8 @@ app.include_router(chatbot_router)
 @app.on_event("startup")
 async def startup_event():
     """Initialize database tables on startup."""
+    # Validate security settings once
+    settings.validate_security()
     init_db()
 
 

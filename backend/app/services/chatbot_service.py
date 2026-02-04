@@ -1,36 +1,32 @@
 """
 Chatbot Service - AI-Powered Task Management
 
-PHASE III AI CHATBOT INTEGRATION:
-Currently uses regex pattern matching for command parsing.
+This service uses Claude AI for natural language understanding with
+fallback to regex pattern matching when API key is not configured.
 
-Future AI enhancements (Phase III):
-- Integration with OpenAI/Anthropic API for true NLU
-- Semantic understanding of user intent
-- Context-aware multi-turn conversations
-- Smart task categorization and tagging
-- Natural language task scheduling
-- Sentiment analysis for task prioritization
-
-To integrate AI in Phase III:
-1. Add AI provider client (e.g., openai, anthropic)
-2. Replace detect_intent() with AI-based intent classification
-3. Add conversation history for context
-4. Implement embeddings for semantic task matching
+Features:
+- AI-powered intent detection via Anthropic Claude API
+- Fuzzy task matching with disambiguation
+- Context-aware task operations
 """
 
 import re
+import json
+import logging
 from typing import Optional, Dict, Any, List, Tuple
 from sqlmodel import Session
 
 from .task_service import TaskService
 from ..schemas.chatbot import ChatbotResponse
+from ..config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ChatbotService:
     """Service for processing natural language commands."""
 
-    # Intent patterns
+    # Intent patterns (fallback when AI is not available)
     PATTERNS = {
         "add": [
             r"add\s+task[:\s]+(.+)",
@@ -64,6 +60,23 @@ class ChatbotService:
             r"commands?",
             r"what\s+can\s+you\s+do",
         ],
+        "greeting": [
+            r"^hi$",
+            r"^hello$",
+            r"^hey$",
+            r"^howdy$",
+            r"^hola$",
+            r"^yo$",
+            r"^sup$",
+            r"^greetings$",
+            r"^good\s+(morning|afternoon|evening|day)",
+            r"^hi\s+there",
+            r"^hello\s+there",
+            r"^hey\s+there",
+            r"^what'?s\s+up",
+            r"^how\s+are\s+you",
+            r"^how'?s\s+it\s+going",
+        ],
     }
 
     HELP_MESSAGE = """I can help you manage your tasks! Try these commands:
@@ -89,9 +102,94 @@ class ChatbotService:
 - "Help" or "?"
 """
 
+    # AI prompt for intent detection
+    AI_INTENT_PROMPT = """You are a task management assistant. Analyze the user's message and extract their intent.
+
+Return a JSON object with:
+- "intent": one of "add", "list", "complete", "delete", "help", "greeting", or "unknown"
+- "param": the task title or filter if applicable (null if not applicable)
+- "filter": for list intent only - "pending", "completed", or "all"
+
+Examples:
+- "add buy milk" -> {{"intent": "add", "param": "buy milk", "filter": null}}
+- "show my pending tasks" -> {{"intent": "list", "param": null, "filter": "pending"}}
+- "mark done groceries" -> {{"intent": "complete", "param": "groceries", "filter": null}}
+- "delete old task" -> {{"intent": "delete", "param": "old task", "filter": null}}
+- "help" -> {{"intent": "help", "param": null, "filter": null}}
+- "hi" -> {{"intent": "greeting", "param": null, "filter": null}}
+- "hello there" -> {{"intent": "greeting", "param": null, "filter": null}}
+- "good morning" -> {{"intent": "greeting", "param": null, "filter": null}}
+- "how are you" -> {{"intent": "greeting", "param": null, "filter": null}}
+
+User message: {message}
+
+Respond with only the JSON object, no other text."""
+
+    @classmethod
+    def detect_intent_with_ai(cls, message: str) -> Tuple[str, Optional[str], Optional[str]]:
+        """
+        Use Claude AI to detect intent from natural language.
+
+        Returns:
+            Tuple of (intent, param, filter)
+        """
+        if not settings.has_anthropic_key:
+            # Fall back to regex if no API key
+            intent, param = cls.detect_intent(message)
+            return intent, param, None
+
+        try:
+            import anthropic
+
+            client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+            response = client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=150,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": cls.AI_INTENT_PROMPT.format(message=message),
+                    }
+                ],
+            )
+
+            # Parse the JSON response
+            response_text = response.content[0].text.strip()
+            # Handle potential markdown code blocks
+            if response_text.startswith("```"):
+                response_text = response_text.split("```")[1]
+                if response_text.startswith("json"):
+                    response_text = response_text[4:]
+                response_text = response_text.strip()
+
+            result = json.loads(response_text)
+
+            intent = result.get("intent", "unknown")
+            param = result.get("param")
+            filter_type = result.get("filter")
+
+            # Validate intent
+            valid_intents = {"add", "list", "complete", "delete", "help", "greeting", "unknown"}
+            if intent not in valid_intents:
+                intent = "unknown"
+
+            return intent, param, filter_type
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse AI response as JSON: {e}")
+            # Fall back to regex
+            intent, param = cls.detect_intent(message)
+            return intent, param, None
+        except Exception as e:
+            logger.warning(f"AI intent detection failed: {e}")
+            # Fall back to regex
+            intent, param = cls.detect_intent(message)
+            return intent, param, None
+
     @classmethod
     def detect_intent(cls, message: str) -> Tuple[str, Optional[str]]:
-        """Detect the intent and extract any parameters from the message."""
+        """Detect the intent and extract any parameters from the message using regex."""
         message_lower = message.lower().strip()
 
         for intent, patterns in cls.PATTERNS.items():
@@ -112,20 +210,33 @@ class ChatbotService:
         message: str,
     ) -> ChatbotResponse:
         """Process a natural language message and execute the appropriate action."""
-        intent, param = cls.detect_intent(message)
+        # Try AI-powered intent detection first, fall back to regex
+        intent, param, filter_type = cls.detect_intent_with_ai(message)
 
         if intent == "help":
             return cls._handle_help()
+        elif intent == "greeting":
+            return cls._handle_greeting()
         elif intent == "add":
             return cls._handle_add(session, user_id, param)
         elif intent == "list":
-            return cls._handle_list(session, user_id, message)
+            return cls._handle_list(session, user_id, message, filter_type)
         elif intent == "complete":
             return cls._handle_complete(session, user_id, param)
         elif intent == "delete":
             return cls._handle_delete(session, user_id, param)
         else:
             return cls._handle_unknown()
+
+    @classmethod
+    def _handle_greeting(cls) -> ChatbotResponse:
+        """Handle greeting intent."""
+        return ChatbotResponse(
+            message="Hello! I'm Misbah's assistant. How can I help you today?",
+            intent="greeting",
+            success=True,
+            suggestions=["Show my tasks", "Add task: ", "Help"],
+        )
 
     @classmethod
     def _handle_help(cls) -> ChatbotResponse:
@@ -173,19 +284,25 @@ class ChatbotService:
         session: Session,
         user_id: str,
         message: str,
+        filter_type: Optional[str] = None,
     ) -> ChatbotResponse:
         """Handle list tasks intent."""
-        message_lower = message.lower()
+        # Use AI-provided filter if available, otherwise parse from message
+        if filter_type is None:
+            message_lower = message.lower()
+            if "pending" in message_lower:
+                filter_type = "pending"
+            elif "completed" in message_lower:
+                filter_type = "completed"
+            else:
+                filter_type = "all"
 
-        if "pending" in message_lower:
+        if filter_type == "pending":
             tasks = TaskService.get_pending_tasks(session, user_id)
-            filter_type = "pending"
-        elif "completed" in message_lower:
+        elif filter_type == "completed":
             tasks = TaskService.get_completed_tasks(session, user_id)
-            filter_type = "completed"
         else:
             tasks = TaskService.get_tasks_by_user(session, user_id)
-            filter_type = "all"
 
         if not tasks:
             return ChatbotResponse(
@@ -218,7 +335,7 @@ class ChatbotService:
         user_id: str,
         task_title: Optional[str],
     ) -> ChatbotResponse:
-        """Handle complete task intent."""
+        """Handle complete task intent with fuzzy matching."""
         if not task_title:
             return ChatbotResponse(
                 message="Please specify which task to complete. Example: 'Complete: Buy groceries'",
@@ -227,9 +344,12 @@ class ChatbotService:
                 suggestions=["Show my tasks", "Complete: "],
             )
 
-        task = TaskService.get_task_by_title(session, task_title, user_id)
+        # Use fuzzy matching
+        match_type, task, candidates = TaskService.find_task_by_title(
+            session, task_title, user_id
+        )
 
-        if not task:
+        if match_type == "none":
             return ChatbotResponse(
                 message=f"Couldn't find a task matching '{task_title}'.",
                 intent="complete",
@@ -237,6 +357,18 @@ class ChatbotService:
                 suggestions=["Show my tasks", "Add task: " + task_title],
             )
 
+        if match_type == "ambiguous":
+            # Multiple matches - ask user to be more specific
+            task_names = [f"• {t.title}" for t in candidates]
+            return ChatbotResponse(
+                message=f"Multiple tasks match '{task_title}'. Please be more specific:\n\n" + "\n".join(task_names),
+                intent="complete",
+                success=False,
+                data={"candidates": [{"id": t.id, "title": t.title} for t in candidates]},
+                suggestions=[f"Complete: {candidates[0].title}"] if candidates else ["Show my tasks"],
+            )
+
+        # Exact or confident fuzzy match
         if task.completed:
             return ChatbotResponse(
                 message=f"Task '{task.title}' is already completed!",
@@ -263,7 +395,7 @@ class ChatbotService:
         user_id: str,
         task_title: Optional[str],
     ) -> ChatbotResponse:
-        """Handle delete task intent."""
+        """Handle delete task intent with fuzzy matching."""
         if not task_title:
             return ChatbotResponse(
                 message="Please specify which task to delete. Example: 'Delete: Buy groceries'",
@@ -272,9 +404,12 @@ class ChatbotService:
                 suggestions=["Show my tasks", "Delete: "],
             )
 
-        task = TaskService.get_task_by_title(session, task_title, user_id)
+        # Use fuzzy matching
+        match_type, task, candidates = TaskService.find_task_by_title(
+            session, task_title, user_id
+        )
 
-        if not task:
+        if match_type == "none":
             return ChatbotResponse(
                 message=f"Couldn't find a task matching '{task_title}'.",
                 intent="delete",
@@ -282,6 +417,18 @@ class ChatbotService:
                 suggestions=["Show my tasks"],
             )
 
+        if match_type == "ambiguous":
+            # Multiple matches - ask user to be more specific
+            task_names = [f"• {t.title}" for t in candidates]
+            return ChatbotResponse(
+                message=f"Multiple tasks match '{task_title}'. Please be more specific:\n\n" + "\n".join(task_names),
+                intent="delete",
+                success=False,
+                data={"candidates": [{"id": t.id, "title": t.title} for t in candidates]},
+                suggestions=[f"Delete: {candidates[0].title}"] if candidates else ["Show my tasks"],
+            )
+
+        # Exact or confident fuzzy match
         title = task.title
         TaskService.delete_task(session, task)
 

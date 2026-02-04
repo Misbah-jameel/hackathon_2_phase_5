@@ -11,7 +11,7 @@ interface ChatbotPanelProps {
   suggestions: string[];
   onSend: (message: string) => void;
   onClose: () => void;
-}
+} 
 
 export function ChatbotPanel({
   messages,

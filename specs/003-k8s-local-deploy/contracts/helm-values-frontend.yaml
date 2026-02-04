@@ -1,0 +1,43 @@
+# Frontend Helm Chart Values Contract
+# This defines the expected values.yaml interface for the frontend Helm chart.
+
+replicaCount: 1
+
+image:
+  repository: todo-frontend
+  tag: latest
+  pullPolicy: Never  # Images built in Minikube's Docker daemon
+
+service:
+  type: NodePort
+  port: 3000
+  targetPort: 3000
+
+env:
+  BETTER_AUTH_SECRET: "development-secret-key-for-local-testing"
+
+# Note: NEXT_PUBLIC_* env vars are baked at build time, not runtime.
+# They are set during `docker build` via build args.
+buildArgs:
+  NEXT_PUBLIC_API_URL: "http://localhost:8000"  # Updated at build time to backend NodePort URL
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000"   # Updated at build time to frontend NodePort URL
+
+probes:
+  liveness:
+    path: /
+    port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 30
+  readiness:
+    tcpSocket:
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
