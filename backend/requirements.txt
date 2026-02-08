@@ -8,8 +8,8 @@ pydantic-settings>=2.1.0
 python-multipart>=0.0.6
 anthropic>=0.25.0
 rapidfuzz>=3.6.0
-# Optional: For PostgreSQL/Neon database (uncomment if needed)
-# psycopg2-binary>=2.9.9
+# PostgreSQL/Neon database driver
+psycopg2-binary>=2.9.9
 
 # Testing
 pytest>=8.0.0

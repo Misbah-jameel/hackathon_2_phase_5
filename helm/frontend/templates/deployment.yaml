@@ -24,6 +24,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "todo-frontend.fullname" . }}
+            - secretRef:
+                name: todo-secrets
+                optional: true
           livenessProbe:
             httpGet:
               path: {{ .Values.probes.liveness.path }}

@@ -138,9 +138,8 @@ jobs:
       - name: Deploy frontend
         run: |
           helm upgrade --install todo-frontend ./helm/frontend \
-            --set image.repository=${{ env.FRONTEND_IMAGE }} \
+            -f helm/frontend/values-cloud.yaml \
             --set image.tag=${{ github.sha }} \
-            --set image.pullPolicy=IfNotPresent \
             -n todo-app
 
       - name: Verify deployment

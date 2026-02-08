@@ -1,9 +1,11 @@
 # Cloud deployment overrides
 # Usage: helm upgrade --install todo-backend ./helm/backend -f helm/backend/values-cloud.yaml -n todo-app
 
+replicaCount: 1
+
 image:
-  repository: ghcr.io/your-username/todo-backend  # Update with your registry
-  tag: v5.0
+  repository: ghcr.io/misbah-jameel/todo-backend
+  tag: latest
   pullPolicy: IfNotPresent
 
 service:
@@ -27,6 +29,18 @@ env:
   DAPR_HOST: "localhost"
   DAPR_PORT: "3500"
   DAPR_PUBSUB_NAME: "pubsub"
+
+probes:
+  liveness:
+    path: /health
+    port: 8000
+    initialDelaySeconds: 15
+    periodSeconds: 30
+  readiness:
+    path: /health
+    port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
 
 resources:
   requests:
