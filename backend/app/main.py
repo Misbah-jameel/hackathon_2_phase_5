@@ -117,7 +117,7 @@ async def health_check():
         dapr_url = f"http://{settings.dapr_host}:{settings.dapr_port}/v1.0/healthz"
         async with httpx.AsyncClient(timeout=2.0) as client:
             resp = await client.get(dapr_url)
-            health["dapr"] = "ok" if resp.status_code == 200 else "error"
+            health["dapr"] = "ok" if resp.status_code < 300 else "error"
     except Exception:
         health["dapr"] = "unavailable"
 

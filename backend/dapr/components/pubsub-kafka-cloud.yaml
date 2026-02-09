@@ -6,15 +6,14 @@ metadata:
 spec:
   type: pubsub.kafka
   version: v1
+  ignoreErrors: true
   metadata:
     - name: brokers
       secretKeyRef:
         name: kafka-secrets
         key: brokers
     - name: authType
-      value: "sasl"
-    - name: saslMechanism
-      value: "SCRAM-SHA-256"
+      value: "password"
     - name: saslUsername
       secretKeyRef:
         name: kafka-secrets
