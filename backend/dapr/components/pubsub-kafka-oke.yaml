@@ -1,0 +1,21 @@
+# Dapr Pub/Sub component for OKE with in-cluster Strimzi Kafka
+# Usage: kubectl apply -f backend/dapr/components/pubsub-kafka-oke.yaml -n todo-app
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub
+  namespace: todo-app
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    - name: brokers
+      value: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+    - name: authType
+      value: "none"
+    - name: consumerGroup
+      value: "todo-backend-group"
+    - name: initialOffset
+      value: "newest"
+    - name: maxMessageBytes
+      value: "1048576"

@@ -2,6 +2,14 @@
 
 A full-stack, event-driven todo application with AI chatbot integration, built on cloud-native infrastructure using Kafka, Dapr, and Kubernetes.
 
+## Live Demo
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://todo-frontend-app-liart.vercel.app |
+| Backend API | https://todo-backend-api-three.vercel.app |
+| Health Check | https://todo-backend-api-three.vercel.app/health |
+
 ## Architecture
 
 ```
@@ -44,6 +52,7 @@ A full-stack, event-driven todo application with AI chatbot integration, built o
 | Infrastructure | Dapr (pub/sub, state, service invocation, jobs, secrets) |
 | Orchestration | Kubernetes (Minikube local, AKS/GKE/OKE cloud) |
 | Kafka Operator | Strimzi (local) / Redpanda Cloud (production) |
+| Cloud Hosting | Vercel (backend serverless + frontend) |
 | CI/CD | GitHub Actions |
 | AI | Anthropic Claude API (chatbot) |
 
@@ -144,6 +153,33 @@ npm run dev
 ```
 
 Access at http://localhost:3000 (frontend) and http://localhost:8000/docs (API docs).
+
+### Cloud Deployment (Vercel + Neon)
+
+**Backend:**
+```bash
+cd backend
+vercel login
+vercel deploy --prod --yes
+
+# Set environment variables (one-time)
+echo "postgresql://user:pass@host.neon.tech/db?sslmode=require" | vercel env add DATABASE_URL production
+echo "your-jwt-secret-32-chars-minimum" | vercel env add JWT_SECRET production
+echo "*" | vercel env add CORS_ORIGINS production
+echo "sk-ant-..." | vercel env add ANTHROPIC_API_KEY production
+```
+
+**Frontend:**
+```bash
+cd frontend
+vercel deploy --prod --yes
+
+# Set backend URL
+echo "https://your-backend.vercel.app" | vercel env add NEXT_PUBLIC_API_URL production
+
+# Redeploy to pick up env var
+vercel deploy --prod --yes
+```
 
 ### Local Kubernetes (Minikube)
 

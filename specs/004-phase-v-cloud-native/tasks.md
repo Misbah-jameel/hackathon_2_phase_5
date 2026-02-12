@@ -17,32 +17,32 @@
 
 ### P1.1 — Model & Schema Extensions
 
-- [ ] T001 [US1] Extend Task model with priority, tags, due_date, reminder, recurrence fields in `backend/app/models/task.py`
+- [x] T001 [US1] Extend Task model with priority, tags, due_date, reminder, recurrence fields in `backend/app/models/task.py`
   - Add: `priority` (str, default "none"), `tags` (str, default ""), `due_date` (Optional[datetime]), `reminder_at` (Optional[datetime]), `reminder_minutes_before` (int, default 15), `recurrence_pattern` (Optional[str]), `recurrence_cron` (Optional[str]), `recurrence_enabled` (bool, default False), `parent_task_id` (Optional[str], FK→tasks.id)
   - **Test**: Import model, verify all new fields exist with correct defaults
 
-- [ ] T002 [P] [US5] Create AuditLog model in `backend/app/models/audit_log.py`
+- [x] T002 [P] [US5] Create AuditLog model in `backend/app/models/audit_log.py`
   - Fields: id, event_id, event_type, user_id, task_id, timestamp, payload_snapshot, created_at
   - Register in `backend/app/models/__init__.py`
   - **Test**: Import model, verify table name is "audit_logs"
 
-- [ ] T003 [US1] Extend TaskCreate schema in `backend/app/schemas/task.py`
+- [x] T003 [US1] Extend TaskCreate schema in `backend/app/schemas/task.py`
   - Add optional fields: priority (validated enum), tags (List[str], max 10, max 30 chars each), due_date, reminder_minutes_before, recurrence_pattern (validated enum), recurrence_cron
   - **Test**: Create schema with new fields, verify validation passes/fails correctly
 
-- [ ] T004 [US1] Extend TaskUpdate schema in `backend/app/schemas/task.py`
+- [x] T004 [US1] Extend TaskUpdate schema in `backend/app/schemas/task.py`
   - Add optional fields: priority, tags, due_date, reminder_minutes_before, recurrence_pattern, recurrence_cron, recurrence_enabled
   - **Test**: Create update schema with partial fields, verify optional behavior
 
-- [ ] T005 [US1] Extend TaskResponse schema in `backend/app/schemas/task.py`
+- [x] T005 [US1] Extend TaskResponse schema in `backend/app/schemas/task.py`
   - Add: priority, tags (as List[str] — split from comma string), due_date, reminder_at, recurrence_pattern, recurrence_enabled, parent_task_id, is_overdue (computed bool)
   - **Test**: Create response from model with tags="a,b", verify tags=["a","b"]
 
-- [ ] T006 [P] [US2] Create filter/sort query schema in `backend/app/schemas/filters.py`
+- [x] T006 [P] [US2] Create filter/sort query schema in `backend/app/schemas/filters.py`
   - TaskQueryParams: search (str), priority (str, comma-separated), tags (str, comma-separated), status (str: pending|completed), due_before (datetime), due_after (datetime), sort_by (str), sort_order (str: asc|desc), page (int), page_size (int)
   - **Test**: Validate query params parse correctly
 
-- [ ] T007 [P] [US5] Create event schemas in `backend/app/schemas/events.py`
+- [x] T007 [P] [US5] Create event schemas in `backend/app/schemas/events.py`
   - TaskEvent: event_id, event_type, timestamp, version, user_id, task_id, payload
   - EventTypes enum: TASK_CREATED, TASK_UPDATED, TASK_COMPLETED, TASK_DELETED
   - **Test**: Create TaskEvent, verify serialization to JSON
@@ -53,36 +53,36 @@
 
 ### P1.2 — Service Layer Extensions
 
-- [ ] T008 [US1] Extend TaskService.create_task() in `backend/app/services/task_service.py`
+- [x] T008 [US1] Extend TaskService.create_task() in `backend/app/services/task_service.py`
   - Accept new fields: priority, tags (join list→string), due_date, reminder_minutes_before, recurrence_pattern, recurrence_cron
   - Compute reminder_at = due_date - reminder_minutes_before (if due_date set)
   - Set recurrence_enabled = True if recurrence_pattern is set
   - **Test**: Create task with priority="high", tags=["work"], due_date=tomorrow, verify all fields saved
 
-- [ ] T009 [US1] Extend TaskService.update_task() in `backend/app/services/task_service.py`
+- [x] T009 [US1] Extend TaskService.update_task() in `backend/app/services/task_service.py`
   - Accept and update all new fields
   - Recompute reminder_at when due_date or reminder_minutes changes
   - **Test**: Update task priority from "none" to "high", verify persisted
 
-- [ ] T010 [US2] Add TaskService.search_tasks() in `backend/app/services/task_service.py`
+- [x] T010 [US2] Add TaskService.search_tasks() in `backend/app/services/task_service.py`
   - Case-insensitive LIKE search on title and description
   - Accept: search query, user_id
   - Return: filtered task list
   - **Test**: Create 3 tasks, search "grocery", verify only matching returned
 
-- [ ] T011 [US2] Add TaskService.filter_tasks() in `backend/app/services/task_service.py`
+- [x] T011 [US2] Add TaskService.filter_tasks() in `backend/app/services/task_service.py`
   - Filter by: status (completed/pending), priority (list), tags (any match), due_date range
   - Combine filters with AND logic
   - Return: filtered task list
   - **Test**: Create tasks with different priorities, filter by "high", verify results
 
-- [ ] T012 [US2] Add TaskService.sort_tasks() in `backend/app/services/task_service.py`
+- [x] T012 [US2] Add TaskService.sort_tasks() in `backend/app/services/task_service.py`
   - Sort by: created_at, updated_at, due_date, priority, title
   - Support: asc/desc order
   - Priority order: high=3, medium=2, low=1, none=0
   - **Test**: Create 3 tasks with different priorities, sort by priority desc, verify order
 
-- [ ] T013 [US2] Add TaskService.get_tasks_paginated() in `backend/app/services/task_service.py`
+- [x] T013 [US2] Add TaskService.get_tasks_paginated() in `backend/app/services/task_service.py`
   - Combine search + filter + sort + pagination
   - Accept: TaskQueryParams + user_id
   - Return: paginated results with total count
@@ -94,35 +94,35 @@
 
 ### P1.3 — Router Extensions
 
-- [ ] T014 [US1+US2] Extend GET /api/tasks in `backend/app/routers/tasks.py`
+- [x] T014 [US1+US2] Extend GET /api/tasks in `backend/app/routers/tasks.py`
   - Accept query params: search, priority, tags, status, due_before, due_after, sort_by, sort_order, page, page_size
   - Use TaskService.get_tasks_paginated()
   - Return extended TaskResponse with all new fields
   - **Test**: `GET /api/tasks?priority=high&sort_by=due_date&sort_order=asc` returns correct results
 
-- [ ] T015 [US1] Extend POST /api/tasks in `backend/app/routers/tasks.py`
+- [x] T015 [US1] Extend POST /api/tasks in `backend/app/routers/tasks.py`
   - Accept new fields in request body (priority, tags, due_date, etc.)
   - Pass to extended TaskService.create_task()
   - Return extended TaskResponse
   - **Test**: `POST /api/tasks` with priority="high", tags=["work"], verify response includes new fields
 
-- [ ] T016 [US1] Extend PATCH /api/tasks/{task_id} in `backend/app/routers/tasks.py`
+- [x] T016 [US1] Extend PATCH /api/tasks/{task_id} in `backend/app/routers/tasks.py`
   - Accept new fields in request body
   - Pass to extended TaskService.update_task()
   - **Test**: `PATCH /api/tasks/{id}` with priority="medium", verify updated
 
-- [ ] T017 [US1] Update task_to_response() helper in `backend/app/routers/tasks.py`
+- [x] T017 [US1] Update task_to_response() helper in `backend/app/routers/tasks.py`
   - Map all new model fields to TaskResponse
   - Compute is_overdue: due_date < now and not completed
   - Split tags string to list
   - **Test**: Model with tags="a,b" produces response with tags=["a","b"]
 
-- [ ] T018 [P] [US3] Add POST /api/tasks/{task_id}/reminder in `backend/app/routers/tasks.py`
+- [x] T018 [P] [US3] Add POST /api/tasks/{task_id}/reminder in `backend/app/routers/tasks.py`
   - Manually schedule/reschedule a reminder for a task
   - Update reminder_at field
   - **Test**: Set reminder for task, verify reminder_at updated
 
-- [ ] T019 [P] [US4] Add DELETE /api/tasks/{task_id}/recurrence in `backend/app/routers/tasks.py`
+- [x] T019 [P] [US4] Add DELETE /api/tasks/{task_id}/recurrence in `backend/app/routers/tasks.py`
   - Disable recurrence on a task
   - Set recurrence_enabled=False, clear recurrence_pattern
   - **Test**: Disable recurrence, verify recurrence_enabled=False
@@ -137,34 +137,34 @@
 
 ### P2.1 — Type & API Updates
 
-- [ ] T020 [US1] Extend Task type in `frontend/types/index.ts`
+- [x] T020 [US1] Extend Task type in `frontend/types/index.ts`
   - Add: priority (enum), tags (string[]), dueDate (string|null), reminderAt (string|null), recurrencePattern (string|null), recurrenceEnabled (boolean), parentTaskId (string|null), isOverdue (boolean)
   - Add: CreateTaskInput extensions (priority, tags, dueDate, reminderMinutesBefore, recurrencePattern, recurrenceCron)
   - Add: UpdateTaskInput extensions
   - Add: TaskSortBy, TaskSortOrder, TaskQueryParams types
   - **Test**: TypeScript compilation passes with no errors
 
-- [ ] T021 [US1] Extend API client in `frontend/lib/api.ts`
+- [x] T021 [US1] Extend API client in `frontend/lib/api.ts`
   - Update fetchTasks() to accept query params (search, priority, tags, status, sort_by, sort_order)
   - Build query string from params
   - Update createTask() / updateTask() to send new fields
   - **Test**: API calls include correct query params
 
-- [ ] T022 [P] [US1] Update mock API in `frontend/lib/mock-api.ts`
+- [x] T022 [P] [US1] Update mock API in `frontend/lib/mock-api.ts`
   - Add new fields to mock tasks (priority, tags, due_date)
   - Support filtering and sorting in mock mode
   - **Test**: Mock API returns tasks with new fields
 
 ### P2.2 — Task Components
 
-- [ ] T023 [US1] Update TaskCard component in `frontend/components/tasks/TaskCard.tsx`
+- [x] T023 [US1] Update TaskCard component in `frontend/components/tasks/TaskCard.tsx`
   - Display priority badge (colored: red=high, yellow=medium, blue=low)
   - Display tags as removable chips
   - Display due date with overdue/due-soon indicators
   - Display recurrence icon if recurring
   - **Test**: Render task with priority="high", tags=["work"], verify visual elements
 
-- [ ] T024 [US1] Update TaskForm/TaskFormModal in `frontend/components/tasks/TaskForm.tsx` and `TaskFormModal.tsx`
+- [x] T024 [US1] Update TaskForm/TaskFormModal in `frontend/components/tasks/TaskForm.tsx` and `TaskFormModal.tsx`
   - Add priority dropdown (High/Medium/Low/None)
   - Add tags input (comma-separated or chip input)
   - Add due date picker (date + time)
@@ -172,7 +172,7 @@
   - Add recurrence pattern dropdown (None/Daily/Weekly/Monthly/Custom)
   - **Test**: Fill form with all new fields, submit, verify payload includes them
 
-- [ ] T025 [US2] Update TaskFilters in `frontend/components/tasks/TaskFilters.tsx`
+- [x] T025 [US2] Update TaskFilters in `frontend/components/tasks/TaskFilters.tsx`
   - Add search input (text field with debounce)
   - Add priority filter dropdown (multi-select: High/Medium/Low)
   - Add tag filter (clickable tag chips or dropdown)
@@ -182,19 +182,19 @@
   - Add "Clear All Filters" button
   - **Test**: Select filters, verify query params update
 
-- [ ] T026 [US2] Update TaskList in `frontend/components/tasks/TaskList.tsx`
+- [x] T026 [US2] Update TaskList in `frontend/components/tasks/TaskList.tsx`
   - Pass search/filter/sort params to API call
   - Show empty state when filters return zero results ("No tasks match your filters")
   - Show result count
   - **Test**: Apply filter, verify list updates with matching tasks
 
-- [ ] T027 [US2] Update useTasks hook in `frontend/hooks/useTasks.ts`
+- [x] T027 [US2] Update useTasks hook in `frontend/hooks/useTasks.ts`
   - Add state for: searchQuery, priorityFilter, tagFilter, sortBy, sortOrder
   - Debounce search input (300ms)
   - Pass all params to fetchTasks API call
   - **Test**: Set search query, verify API called with correct params after debounce
 
-- [ ] T028 [P] [US3] Create ReminderToast component in `frontend/components/tasks/ReminderToast.tsx`
+- [x] T028 [P] [US3] Create ReminderToast component in `frontend/components/tasks/ReminderToast.tsx`
   - Display reminder notification for due tasks
   - Show task title, time until due
   - Action: "View Task" button
@@ -210,20 +210,20 @@
 
 ### P3.1 — Dapr Client & Event Service
 
-- [ ] T029 [US6] Create Dapr HTTP client wrapper in `backend/app/services/dapr_client.py`
+- [x] T029 [US6] Create Dapr HTTP client wrapper in `backend/app/services/dapr_client.py`
   - DaprClient class with methods: publish_event(), get_state(), save_state(), delete_state(), get_secret()
   - Base URL: `http://localhost:3500` (configurable via env)
   - Use httpx async client
   - Graceful fallback when Dapr sidecar is not available (log warning, don't crash)
   - **Test**: Mock httpx, verify correct URL paths called
 
-- [ ] T030 [US5] Create EventService in `backend/app/services/event_service.py`
+- [x] T030 [US5] Create EventService in `backend/app/services/event_service.py`
   - publish_task_event(event_type, user_id, task_id, payload) → builds TaskEvent and publishes via DaprClient
   - Event types: task.created, task.updated, task.completed, task.deleted
   - Auto-generate event_id (UUID), timestamp (now), version (1)
   - **Test**: Call publish_task_event(), verify DaprClient.publish_event() called with correct topic and schema
 
-- [ ] T031 [US3] Create ReminderService in `backend/app/services/reminder_service.py`
+- [x] T031 [US3] Create ReminderService in `backend/app/services/reminder_service.py`
   - schedule_reminder(task_id, user_id, fire_at) → creates Dapr Job via HTTP API
   - cancel_reminder(task_id) → cancels Dapr Job
   - Job name format: `reminder-{task_id}`
@@ -231,22 +231,22 @@
 
 ### P3.2 — Integrate Events into Task CRUD
 
-- [ ] T032 [US5] Add event publishing to task creation in `backend/app/routers/tasks.py`
+- [x] T032 [US5] Add event publishing to task creation in `backend/app/routers/tasks.py`
   - After TaskService.create_task() succeeds, call EventService.publish_task_event("task.created", ...)
   - Include task payload in event
   - If event publish fails, log error but don't fail the request (fire-and-forget)
   - **Test**: Create task, verify task.created event published
 
-- [ ] T033 [US5] Add event publishing to task update in `backend/app/routers/tasks.py`
+- [x] T033 [US5] Add event publishing to task update in `backend/app/routers/tasks.py`
   - After update, publish "task.updated" with before/after changes
   - After toggle complete, publish "task.completed" or "task.updated"
   - **Test**: Update task, verify task.updated event published
 
-- [ ] T034 [US5] Add event publishing to task deletion in `backend/app/routers/tasks.py`
+- [x] T034 [US5] Add event publishing to task deletion in `backend/app/routers/tasks.py`
   - Before delete, publish "task.deleted" event
   - **Test**: Delete task, verify task.deleted event published
 
-- [ ] T035 [US3] Add reminder scheduling on task create/update in `backend/app/routers/tasks.py`
+- [x] T035 [US3] Add reminder scheduling on task create/update in `backend/app/routers/tasks.py`
   - When task created with due_date: schedule reminder via ReminderService
   - When task updated with new due_date: reschedule reminder
   - When task completed: cancel reminder
@@ -254,35 +254,35 @@
 
 ### P3.3 — Event Consumers (Dapr Subscriptions)
 
-- [ ] T036 [US5] Create Dapr subscription endpoint in `backend/app/routers/subscriptions.py`
+- [x] T036 [US5] Create Dapr subscription endpoint in `backend/app/routers/subscriptions.py`
   - GET /dapr/subscribe → returns subscription list (task-events, reminders, task-updates routes)
   - **Test**: GET /dapr/subscribe returns 3 subscription entries
 
-- [ ] T037 [US5] Create audit log consumer in `backend/app/consumers/audit_consumer.py`
+- [x] T037 [US5] Create audit log consumer in `backend/app/consumers/audit_consumer.py`
   - POST /api/events/task-events → receives event, writes AuditLog to DB
   - Idempotent: skip if event_id already exists
   - **Test**: Post event to endpoint, verify AuditLog record created
 
-- [ ] T038 [US3] Create reminder consumer in `backend/app/consumers/reminder_consumer.py`
+- [x] T038 [US3] Create reminder consumer in `backend/app/consumers/reminder_consumer.py`
   - POST /api/events/reminders → receives reminder trigger, publishes notification
   - Skip if task is already completed
   - **Test**: Post reminder event, verify processing (notification publish)
 
-- [ ] T039 [US4] Create recurrence consumer in `backend/app/consumers/recurrence_consumer.py`
+- [x] T039 [US4] Create recurrence consumer in `backend/app/consumers/recurrence_consumer.py`
   - POST /api/events/task-updates → on task.completed for recurring task, generate next instance
   - Copy task attributes, set new due_date based on pattern, link parent_task_id
   - **Test**: Post task.completed event for recurring task, verify new task created
 
-- [ ] T040 [P] [US5] Create audit trail endpoint in `backend/app/routers/events.py`
+- [x] T040 [P] [US5] Create audit trail endpoint in `backend/app/routers/events.py`
   - GET /api/events/audit?task_id={id} → return audit log entries for a task
   - **Test**: Create audit entries, query by task_id, verify correct entries returned
 
-- [ ] T041 [US5+US6] Register all new routers in `backend/app/main.py`
+- [x] T041 [US5+US6] Register all new routers in `backend/app/main.py`
   - Import and include: events_router, subscriptions_router
   - Register consumer routes
   - **Test**: App starts, all new endpoints accessible
 
-- [ ] T042 [US6] Add Dapr configuration to `backend/app/config.py`
+- [x] T042 [US6] Add Dapr configuration to `backend/app/config.py`
   - Add: dapr_host (default "localhost"), dapr_port (default 3500), dapr_pubsub_name (default "pubsub")
   - **Test**: Settings load Dapr config from env vars
 
@@ -294,32 +294,32 @@
 
 **Purpose**: Create Dapr component YAML files and Kafka setup manifests.
 
-- [ ] T043 [P] [US6] Create Dapr pub/sub component for local Kafka in `backend/dapr/components/pubsub-kafka-local.yaml`
+- [x] T043 [P] [US6] Create Dapr pub/sub component for local Kafka in `backend/dapr/components/pubsub-kafka-local.yaml`
   - Type: pubsub.kafka, brokers: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092, authType: none
   - **Test**: YAML validates with dapr component schema
 
-- [ ] T044 [P] [US6] Create Dapr pub/sub component for cloud Kafka in `backend/dapr/components/pubsub-kafka-cloud.yaml`
+- [x] T044 [P] [US6] Create Dapr pub/sub component for cloud Kafka in `backend/dapr/components/pubsub-kafka-cloud.yaml`
   - Type: pubsub.kafka, brokers: from secret, authType: sasl, SCRAM-SHA-256
   - **Test**: YAML validates, references correct secret keys
 
-- [ ] T045 [P] [US6] Create Dapr state store component in `backend/dapr/components/statestore.yaml`
+- [x] T045 [P] [US6] Create Dapr state store component in `backend/dapr/components/statestore.yaml`
   - Type: state.postgresql (cloud) / state.in-memory (local fallback)
   - **Test**: YAML validates
 
-- [ ] T046 [P] [US6] Create Dapr secrets store component in `backend/dapr/components/secretstore-k8s.yaml`
+- [x] T046 [P] [US6] Create Dapr secrets store component in `backend/dapr/components/secretstore-k8s.yaml`
   - Type: secretstores.kubernetes
   - **Test**: YAML validates
 
-- [ ] T047 [P] [US6] Create Dapr configuration in `backend/dapr/config.yaml`
+- [x] T047 [P] [US6] Create Dapr configuration in `backend/dapr/config.yaml`
   - Enable tracing, metrics, API logging
   - **Test**: YAML validates
 
-- [ ] T048 [P] [US7] Create Strimzi Kafka cluster manifest in `helm/kafka/kafka-cluster.yaml`
+- [x] T048 [P] [US7] Create Strimzi Kafka cluster manifest in `helm/kafka/kafka-cluster.yaml`
   - Single broker, KRaft mode (no ZooKeeper), 1GB memory limit
   - 3 topics: task-events (3 partitions), reminders (1 partition), task-updates (1 partition)
   - **Test**: YAML validates against Strimzi CRD schema
 
-- [ ] T049 [P] [US7] Create Strimzi operator installation manifest in `helm/kafka/strimzi-operator.yaml`
+- [x] T049 [P] [US7] Create Strimzi operator installation manifest in `helm/kafka/strimzi-operator.yaml`
   - Install Strimzi cluster operator via Helm reference or manifest
   - Namespace: kafka
   - **Test**: Operator installs and runs
@@ -332,12 +332,12 @@
 
 **Purpose**: Update requirements.txt, Dockerfile for Dapr compatibility.
 
-- [ ] T050 [US6] Update `backend/requirements.txt`
+- [x] T050 [US6] Update `backend/requirements.txt`
   - Add: httpx>=0.27.0 (Dapr HTTP calls)
   - Verify existing deps are compatible
   - **Test**: `pip install -r requirements.txt` succeeds
 
-- [ ] T051 [US6] Update `backend/Dockerfile`
+- [x] T051 [US6] Update `backend/Dockerfile`
   - Ensure port 8000 exposed (unchanged)
   - Add DAPR_HTTP_PORT env var (default 3500)
   - No Dapr SDK install needed (using HTTP directly)
@@ -353,24 +353,24 @@
 
 ### P6.1 — Helm Chart Updates
 
-- [ ] T052 [US7] Update backend Helm deployment template `helm/backend/templates/deployment.yaml`
+- [x] T052 [US7] Update backend Helm deployment template `helm/backend/templates/deployment.yaml`
   - Add Dapr annotations: dapr.io/enabled, dapr.io/app-id, dapr.io/app-port, dapr.io/app-protocol
   - **Test**: `helm template` renders correct annotations
 
-- [ ] T053 [US7] Update backend Helm values `helm/backend/values.yaml`
+- [x] T053 [US7] Update backend Helm values `helm/backend/values.yaml`
   - Add: dapr.enabled (true), dapr.appId (todo-backend), dapr.appPort (8000)
   - Add environment variables: DAPR_HOST, DAPR_PORT, DAPR_PUBSUB_NAME
   - **Test**: Values render correctly in templates
 
-- [ ] T054 [US7] Create Dapr components Helm template `helm/backend/templates/dapr-components.yaml`
+- [x] T054 [US7] Create Dapr components Helm template `helm/backend/templates/dapr-components.yaml`
   - Render Dapr component manifests from values (conditional local vs cloud)
   - **Test**: `helm template` produces valid Dapr component YAMLs
 
-- [ ] T055 [US7] Update backend ConfigMap `helm/backend/templates/configmap.yaml`
+- [x] T055 [US7] Update backend ConfigMap `helm/backend/templates/configmap.yaml`
   - Add Dapr-related environment variables
   - **Test**: ConfigMap includes DAPR_HOST, DAPR_PORT
 
-- [ ] T056 [P] [US7] Create cloud values override `helm/backend/values-cloud.yaml`
+- [x] T056 [P] [US7] Create cloud values override `helm/backend/values-cloud.yaml`
   - Image from registry (not local), imagePullPolicy: IfNotPresent
   - Cloud Kafka brokers, PostgreSQL DATABASE_URL
   - Resource limits for cloud
@@ -486,16 +486,16 @@
 
 **Purpose**: GitHub Actions pipeline, structured logging, monitoring.
 
-- [ ] T072 [P] [US10] Add structured JSON logging to backend in `backend/app/logging_config.py`
+- [x] T072 [P] [US10] Add structured JSON logging to backend in `backend/app/logging_config.py`
   - JSONFormatter: timestamp, level, message, module, request_id
   - Request ID middleware: generate UUID per request, attach to all logs
   - **Test**: Backend logs emit valid JSON
 
-- [ ] T073 [P] [US10] Add request logging middleware in `backend/app/main.py`
+- [x] T073 [P] [US10] Add request logging middleware in `backend/app/main.py`
   - Log: method, path, status_code, duration_ms for every request
   - **Test**: API request produces structured log entry
 
-- [ ] T074 [US9] Create GitHub Actions CI/CD workflow in `.github/workflows/ci-cd.yaml`
+- [x] T074 [US9] Create GitHub Actions CI/CD workflow in `.github/workflows/ci-cd.yaml`
   - Trigger: push to main
   - Jobs:
     1. lint: ruff check backend, tsc --noEmit frontend
@@ -506,7 +506,7 @@
   - Secrets needed: DOCKER_USERNAME, DOCKER_PASSWORD, KUBECONFIG
   - **Test**: Pipeline runs on push, all stages pass
 
-- [ ] T075 [US10] Update health check endpoint in `backend/app/main.py`
+- [x] T075 [US10] Update health check endpoint in `backend/app/main.py`
   - Enhanced /health: check DB connectivity, Dapr sidecar status
   - Return: { status, db: ok/error, dapr: ok/error, version }
   - **Test**: Health endpoint returns all checks
@@ -519,7 +519,7 @@
 
 **Purpose**: Final validation, documentation, cleanup.
 
-- [ ] T076 [P] Update README.md with Phase V architecture, setup instructions, public URL
+- [x] T076 [P] Update README.md with Phase V architecture, setup instructions, public URL
   - Architecture diagram
   - Local setup (Minikube + Strimzi + Dapr)
   - Cloud deployment steps
@@ -527,7 +527,7 @@
   - API documentation summary
   - **Test**: README is accurate and complete
 
-- [ ] T077 [P] Create deployment runbook in `docs/DEPLOYMENT.md`
+- [x] T077 [P] Create deployment runbook in `docs/DEPLOYMENT.md`
   - Step-by-step: local → cloud deployment
   - Troubleshooting common issues
   - Rollback procedures

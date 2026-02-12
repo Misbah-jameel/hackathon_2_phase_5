@@ -1,0 +1,15 @@
+# Dapr State Store component for OKE with Neon PostgreSQL
+# Usage: kubectl apply -f backend/dapr/components/statestore-oke.yaml -n todo-app
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+  namespace: todo-app
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: todo-secrets
+        key: DATABASE_URL

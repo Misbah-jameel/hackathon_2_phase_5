@@ -1,0 +1,54 @@
+# OKE Ingress with NGINX + OCI Network Load Balancer (Always Free: 10Mbps flexible shape)
+# Usage: kubectl apply -f k8s/cloud/ingress-oke.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-ingress
+  namespace: todo-app
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    # OCI Load Balancer annotations (flexible shape, 10Mbps free tier)
+    oci.oraclecloud.com/load-balancer-type: "nlb"
+    oci-network-load-balancer.oraclecloud.com/backend-policy: "FIVE_TUPLE"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-backend
+                port:
+                  number: 8000
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: todo-backend
+                port:
+                  number: 8000
+          - path: /dapr
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-backend
+                port:
+                  number: 8000
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-frontend
+                port:
+                  number: 3000

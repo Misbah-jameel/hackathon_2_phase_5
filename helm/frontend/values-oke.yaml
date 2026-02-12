@@ -1,0 +1,42 @@
+# OKE (Oracle Kubernetes Engine) - Always Free ARM tier
+# Usage: helm install todo-frontend helm/frontend/ -f helm/frontend/values-oke.yaml -n todo-app
+
+replicaCount: 1
+
+image:
+  repository: <REGION>.ocir.io/<TENANCY_NAMESPACE>/todo-frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: ocir-secret
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+env:
+  BETTER_AUTH_SECRET: ""  # Set via todo-secrets K8s secret
+
+# ARM-optimized probes
+probes:
+  liveness:
+    path: /
+    port: 3000
+    initialDelaySeconds: 45
+    periodSeconds: 30
+  readiness:
+    tcpSocket:
+      port: 3000
+    initialDelaySeconds: 20
+    periodSeconds: 10
+
+# ARM-optimized resource limits (4 OCPU / 24GB shared)
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
