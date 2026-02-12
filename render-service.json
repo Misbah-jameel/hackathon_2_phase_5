@@ -1,0 +1,21 @@
+{
+  "type": "web_service",
+  "name": "todo-backend-api",
+  "ownerId": "tea-d64stj3qhjbs73cpfuj0",
+  "repo": "https://github.com/Misbah-jameel/hackathon_2_phase_5",
+  "rootDir": "backend",
+  "plan": "free",
+  "region": "oregon",
+  "branch": "main",
+  "serviceDetails": {
+    "runtime": "docker",
+    "pullRequestPreviewsEnabled": false
+  },
+  "envVars": [
+    {"key": "DATABASE_URL", "value": "SET_IN_RENDER_DASHBOARD"},
+    {"key": "JWT_SECRET", "value": "SET_IN_RENDER_DASHBOARD"},
+    {"key": "CORS_ORIGINS", "value": "*"},
+    {"key": "ANTHROPIC_API_KEY", "value": "SET_IN_RENDER_DASHBOARD"},
+    {"key": "ANTHROPIC_MODEL", "value": "claude-3-haiku-20240307"}
+  ]
+}
